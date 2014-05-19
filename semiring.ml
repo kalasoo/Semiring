@@ -1,8 +1,8 @@
 (** Semiring *)
 module type S = sig
   
-  type t
   (** The type of a semiring. *)
+  type t
 
   val zero   : t
 
@@ -59,7 +59,7 @@ module Make_Matrix_Semiring (Semiring : S) = struct
       done;
       matrix
 
-  let inner_times n a_row b_col =
+  let inner_times a_row b_col =
     let result = ref (Semiring.zero) in
     Array.iteri (fun i a_i -> 
       result := Semiring.plus !result (Semiring.times a_i b_col.(i)) 
@@ -82,9 +82,19 @@ module Make_Matrix_Semiring (Semiring : S) = struct
         let a_row = a.(i) in
         for j = 0 to n - 1 do
           let b_col = column n j b in
-          matrix.(i).(j) <- inner_times n a_row b_col
+          matrix.(i).(j) <- inner_times a_row b_col
         done;
       done;
       matrix
+
+  let solve a =
+    let n = size a in
+    let _a = ref(a)
+    and _m = ref(one n) in
+    for i = 0 to n - 1 do
+      _m := plus  !_m !_a;
+      _a := times !_a a
+    done;
+    !_m
 
 end
