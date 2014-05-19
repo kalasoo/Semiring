@@ -39,25 +39,29 @@ module MPS = struct
 
 end
 
+module MMPS = Semiring.Make_Matrix_Semiring(MPS)
+
 (** Boolean Semiring *)
 module BS = struct
 
-  include Core.Blang
+  module B = Core.Blang
 
-  let zero = constant false
+  type t = string B.t
 
-  let one  = constant true
+  let zero = B.false_
 
-  let compare_elt = compare String.compare
+  let one  = B.true_
+
+  let compare_elt = B.compare String.compare
 
   let compare_product a b =
-    let a_list = gather_conjuncts a  in
-    let b_list = gather_conjuncts b  in
+    let a_list = B.gather_conjuncts a  in
+    let b_list = B.gather_conjuncts b  in
     let rec loop a_l b_l = 
       match a_l, b_l with
-      | [], [] -> 0
-      | a', [] -> 1
-      | [], b' -> -1
+      | [] , []  -> 0
+      | [_], []  | _ :: _, [] -> 1
+      | [] , [_] | [], _ :: _ -> -1
       | a_hd :: a_tl, b_hd :: b_tl ->
         let ret = compare_elt a_hd b_hd in
         if  ret = 0 then loop a_tl b_tl
@@ -67,60 +71,62 @@ module BS = struct
 
   let rec expand f =
     match f with
-    | Or  (g, h) -> or_ [expand g; expand h]
-    | And (g, h) -> 
-      let g_list = gather_disjuncts (expand g) in
-      let h_list = gather_disjuncts (expand h) in
+    | B.Or  (g, h) -> B.or_ [expand g; expand h]
+    | B.And (g, h) -> 
+      let g_list = B.gather_disjuncts (expand g) in
+      let h_list = B.gather_disjuncts (expand h) in
       let expanded_list = List.fold g_list ~init:[] ~f:(fun l g_component -> 
           List.append l (
             List.map h_list ~f:(fun h_component ->
-              and_ [g_component; h_component]
+              B.and_ [g_component; h_component]
             )
           )
         )
       in
-      or_ expanded_list
-    | Not f' -> (
+      B.or_ expanded_list
+    | B.Not f' -> (
       match f' with
-      | Not f''    -> expand f''
-      | Or  (g, h) -> expand (and_ [not_ g; not_ h])
-      | And (g, h) -> expand (or_  [not_ g; not_ h])
-      | _          -> expand (not_ f'))
+      | B.Not f''    -> expand f''
+      | B.Or  (g, h) -> expand (B.and_ [B.not_ g; B.not_ h])
+      | B.And (g, h) -> expand (B.or_  [B.not_ g; B.not_ h])
+      | _            -> expand (B.not_ f'))
     | _ -> f
 
   let rec reduce_expanded f =
     match f with
-    | Or (g, h) as sums ->
-      let s_list        = List.map (gather_disjuncts sums) ~f:reduce_expanded in
-      let s_sorted_list = List.sort compare_product s_list in
-      or_ s_sorted_list
-    | And (g, h) as products ->
-      let p_list = gather_conjuncts products in
-      and_ (List.sort compare_elt p_list)
-    | Not f' -> (
+    | B.Or (_, _) as sums ->
+      let s_list        = List.map (B.gather_disjuncts sums) ~f:reduce_expanded in
+      let s_sorted_list = List.sort ~cmp:compare_product s_list in
+      B.or_ s_sorted_list
+    | B.And (_, _) as products ->
+      let p_list = B.gather_conjuncts products in
+      B.and_ (List.sort ~cmp:compare_elt p_list)
+    | B.Not f' -> (
       match f' with
-      | Not f'' -> reduce_expanded f''
-      | _       -> not_ (reduce_expanded f'))
+      | B.Not f'' -> reduce_expanded f''
+      | _         -> B.not_ (reduce_expanded f'))
     | _ -> f
 
-  let rec reduce f = 
+  let reduce f = 
     reduce_expanded (expand f)
 
   let plus a b = 
     if a = b then a
-    else reduce (or_ [a ; b])
+    else reduce (B.or_ [a ; b])
 
   let times a b =
     if a = b then a
-    else reduce (and_ [a ; b])
+    else reduce (B.and_ [a ; b])
 
   let create s = 
-    reduce (t_of_sexp String.t_of_sexp (Sexp.of_string s))
+    reduce (B.t_of_sexp String.t_of_sexp (Sexp.of_string s))
 
   let to_string f =
-    sexp_of_t String.sexp_of_t f
+    B.sexp_of_t String.sexp_of_t f
 
 end
+
+module MBS = Semiring.Make_Matrix_Semiring(BS)
 
 (** Martelli Semiring *)
 module MS = struct
@@ -151,3 +157,5 @@ module MS = struct
     Sexp.to_string (sexp_of_t a)
 
 end
+
+module MMS = Semiring.Make_Matrix_Semiring(MS)
