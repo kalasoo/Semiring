@@ -21,12 +21,18 @@ File `util.ml`
 
 (** MinPlusSemiring *)
 Util.MPS
+(** Matrix MinPlusSemiring *)
+Util.MMPS
 
 (** BooleanSemiring *)
 Util.BS
+(** Matrix BooleanSemiring *)
+Util.MBS
 
 (** MartelliSemiring *)
 Util.MS
+(** Matrix MartelliSemiring *)
+Util.MMS
 
 ```
 
