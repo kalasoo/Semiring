@@ -39,8 +39,6 @@ module MPS = struct
 
 end
 
-module Make_Boolean (Elt : 'a)
-
 (** Boolean Semiring *)
 module BS = struct
 
