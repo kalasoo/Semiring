@@ -9,13 +9,18 @@ module MPS = struct
   | Val of int
   | Infinity
 
+  let zero  = Infinity
+
+  let one   = Val 0
+
   let create i =
     if i >= 0 then Val i
     else raise Negative_value
 
-  let zero  = Infinity
-
-  let one   = Val 0  
+  let to_string a =
+    match a with
+    | Val i -> Int.to_string i
+    | Infinity -> "Infinity"
 
   let reduce a = a
 
@@ -100,15 +105,8 @@ module BS = struct
       | _       -> not_ (reduce_expanded f'))
     | _ -> f
 
-
   let rec reduce f = 
     reduce_expanded (expand f)
-
-  let create s = 
-    reduce (t_of_sexp String.t_of_sexp (Sexp.of_string s))
-
-  let to_string f =
-    sexp_of_t String.sexp_of_t f
 
   let plus a b = 
     if a = b then a
@@ -117,5 +115,41 @@ module BS = struct
   let times a b =
     if a = b then a
     else reduce (and_ [a ; b])
+
+  let create s = 
+    reduce (t_of_sexp String.t_of_sexp (Sexp.of_string s))
+
+  let to_string f =
+    sexp_of_t String.sexp_of_t f
+
+end
+
+(** Martelli Semiring *)
+module MS = struct
+  
+  module S = Set.Make(String)
+
+  include Set.Make(S)
+
+  let zero = add empty S.empty
+
+  let one = empty
+
+  let reduce a = 
+    let not_subset set = for_all a ~f:(fun a_set -> not (S.subset a_set set) || S.equal a_set set) in
+    filter a ~f:not_subset
+
+  let plus a b =
+    let fold_element s a_set = fold b ~init:s ~f:(fun s_iter b_set -> add s_iter (S.union a_set b_set)) in
+    reduce (fold a ~init:empty ~f:fold_element )
+
+  let times a b =
+    reduce (union a b)
+
+  let create s =
+    reduce (t_of_sexp (Sexp.of_string s))
+
+  let to_string a =
+    Sexp.to_string (sexp_of_t a)
 
 end
