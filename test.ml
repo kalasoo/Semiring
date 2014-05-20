@@ -1,11 +1,17 @@
 open Util
 
-module MMPS = Semiring.Make_Matrix_Semiring(MPS)
+let a = BS.create "a";;
+let b = BS.create "b";;
+let c = BS.create "c";;
 
-let () =
-  let example = Array.make_matrix 3 3 MPS.zero in
-  example.(0).(1) <- MPS.Val 2;
-  example.(0).(2) <- MPS.Val 4;
-  example.(1).(2) <- MPS.Val 1;
+let a_and_b = BS.create "(and a b)";;
+let b_and_a = BS.create "(and b a)";;
 
-  MMPS.solve example
+let a_or_b = BS.create "(or a b)";;
+let b_or_a = BS.create "(or b a)";;
+
+let ab = BS.create "(and (or a b) (or b a))"
+
+let c_or_d = BS.create "(or c d)";;
+
+let a_and_c = BS.create "(and a c)";;
