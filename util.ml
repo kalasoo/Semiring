@@ -64,10 +64,14 @@ module BS = struct
       | [] , [_] | [], _ :: _ -> -1
       | a_hd :: a_tl, b_hd :: b_tl ->
         let ret = compare_elt a_hd b_hd in
-        if  ret = 0 then loop a_tl b_tl
-        else ret
+        if ret = -1 then max ret (loop a_tl b_l)
+        else
+          if ret = 0  then loop a_tl b_tl
+          else min ret (loop a_l b_tl)
     in
-    loop a_list b_list
+    let ret = loop a_list b_list in
+    if ret = 0 then Int.compare (List.length a_list) (List.length b_list)
+    else ret
 
   let rec expand f =
     match f with
@@ -99,8 +103,18 @@ module BS = struct
       let s_sorted_list = List.sort ~cmp:compare_product s_list in
       B.or_ s_sorted_list
     | B.And (_, _) as products ->
-      let p_list = B.gather_conjuncts products in
-      B.and_ (List.sort ~cmp:compare_elt p_list)
+      let p_list        = B.gather_conjuncts products in
+      let p_sorted_list = List.sort ~cmp:compare_elt p_list in
+      let rec remove_duplicates l acc =
+        match l with
+        | []  -> List.rev acc
+        | [x] -> List.rev (x::acc)
+        | x1 :: x2 :: tl ->
+          if (compare_elt x1 x2) = 0
+          then remove_duplicates (x2 :: tl) acc
+          else remove_duplicates (x2 :: tl) (x1 :: acc)
+      in
+      B.and_ (remove_duplicates p_sorted_list [])
     | B.Not f' -> (
       match f' with
       | B.Not f'' -> reduce_expanded f''
@@ -123,6 +137,9 @@ module BS = struct
 
   let to_string f =
     B.sexp_of_t String.sexp_of_t f
+
+  let test s =
+    to_string (create s)
 
 end
 
