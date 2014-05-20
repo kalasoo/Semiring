@@ -1,46 +1,5 @@
 open Core.Std
 
-(** Min Plus Semiring *)
-module MPS = struct
-
-  exception Negative_value
-  
-  type t = 
-  | Val of int
-  | Infinity
-
-  let zero  = Infinity
-
-  let one   = Val 0
-
-  let create i =
-    if i >= 0 then Val i
-    else raise Negative_value
-
-  let to_string a =
-    match a with
-    | Val i -> Int.to_string i
-    | Infinity -> "Infinity"
-
-  let reduce a = a
-
-  let plus a b =
-    match a with
-    | Infinity -> b
-    | Val a'   ->
-      match b with
-      | Infinity -> a
-      | Val b'   -> Val (min a' b')
-
-  let times a b =
-    match a, b with
-    | _, Infinity | Infinity, _ -> Infinity
-    | Val a', Val b'            -> Val (a' + b')
-
-end
-
-module MMPS = Semiring.Make_Matrix_Semiring(MPS)
-
 (** Boolean Semiring *)
 module BS = struct
 
@@ -152,35 +111,3 @@ module BS = struct
 end
 
 module MBS = Semiring.Make_Matrix_Semiring(BS)
-
-(** Martelli Semiring *)
-module MS = struct
-  
-  module S = Set.Make(String)
-
-  include Set.Make(S)
-
-  let zero = add empty S.empty
-
-  let one = empty
-
-  let reduce a = 
-    let not_subset set = for_all a ~f:(fun a_set -> not (S.subset a_set set) || S.equal a_set set) in
-    filter a ~f:not_subset
-
-  let plus a b =
-    let fold_element s a_set = fold b ~init:s ~f:(fun s_iter b_set -> add s_iter (S.union a_set b_set)) in
-    reduce (fold a ~init:empty ~f:fold_element )
-
-  let times a b =
-    reduce (union a b)
-
-  let create s =
-    reduce (t_of_sexp (Sexp.of_string s))
-
-  let to_string a =
-    Sexp.to_string (sexp_of_t a)
-
-end
-
-module MMS = Semiring.Make_Matrix_Semiring(MS)
