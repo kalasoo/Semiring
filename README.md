@@ -41,6 +41,6 @@ Compilation
 
 ```shell
 
-corebuild util.byte
+corebuild -pkg str util.byte
 
 ```

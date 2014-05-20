@@ -54,24 +54,22 @@ module BS = struct
 
   let compare_elt = B.compare String.compare
 
-  let compare_product a b =
-    let a_list = B.gather_conjuncts a  in
-    let b_list = B.gather_conjuncts b  in
-    let rec loop a_l b_l = 
-      match a_l, b_l with
-      | [] , []  -> 0
-      | [_], []  | _ :: _, [] -> 1
-      | [] , [_] | [], _ :: _ -> -1
-      | a_hd :: a_tl, b_hd :: b_tl ->
-        let ret = compare_elt a_hd b_hd in
-        if ret = -1 then max ret (loop a_tl b_l)
-        else
-          if ret = 0  then loop a_tl b_tl
-          else min ret (loop a_l b_tl)
+  let contains s1 s2 =
+    let re = Str.regexp_string s2
     in
-    let ret = loop a_list b_list in
-    if ret = 0 then Int.compare (List.length a_list) (List.length b_list)
-    else ret
+      try ignore (Str.search_forward re s1 0); true
+      with Not_found -> false
+
+  let string_of_product product = 
+    let l = B.values product in
+    String.of_char_list (List.map l ~f:Char.of_string)
+
+  let compare_product a b =
+    let a_str = string_of_product a  in
+    let b_str = string_of_product b  in
+    let compare_leng = Int.compare (String.length a_str) (String.length b_str) in
+      if compare_leng = 0 then String.compare a_str b_str
+      else compare_leng
 
   let rec expand f =
     match f with
@@ -101,7 +99,17 @@ module BS = struct
     | B.Or (_, _) as sums ->
       let s_list        = List.map (B.gather_disjuncts sums) ~f:reduce_expanded in
       let s_sorted_list = List.sort ~cmp:compare_product s_list in
-      B.or_ s_sorted_list
+      let reduced_strings = ref [] in
+      let reduced_l       = ref [] in
+      List.iter s_sorted_list ~f:(fun p -> 
+        let p_str = string_of_product p in
+        if List.exists !reduced_strings ~f:(fun str -> contains p_str str) then ()
+        else (
+          reduced_strings := (p_str :: !reduced_strings);
+          reduced_l       := (p     :: !reduced_l)
+        )
+      );
+      B.or_ (List.rev !reduced_l)
     | B.And (_, _) as products ->
       let p_list        = B.gather_conjuncts products in
       let p_sorted_list = List.sort ~cmp:compare_elt p_list in
