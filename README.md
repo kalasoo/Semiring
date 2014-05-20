@@ -10,37 +10,39 @@ File `semiring.ml`
 (** The general interface of a semiring *)
 Semiring.S
 
-(** The general interface of a semiring *)
+(** The functor of a matrix semiring *)
 Semiring.Make_Matrix_Semiring(A_SEMIRING)
 
 ```
 
-File `util.ml`
+MinplusSemiring: `corebuild minplus.byte`
 
 ```ocaml
 
 (** MinPlusSemiring *)
-Util.MPS
+MPS
 (** Matrix MinPlusSemiring *)
-Util.MMPS
-
-(** BooleanSemiring *)
-Util.BS
-(** Matrix BooleanSemiring *)
-Util.MBS
-
-(** MartelliSemiring *)
-Util.MS
-(** Matrix MartelliSemiring *)
-Util.MMS
+MMPS
 
 ```
 
-Compilation
------------
+BooleanSemiring: `corebuild -pkg str minplus.byte`
 
-```shell
+```ocaml
+(** BooleanSemiring *)
+BS
+(** Matrix BooleanSemiring *)
+MBS
 
-corebuild -pkg str util.byte
+```
+
+Martelli: `corebuild -pkg str minplus.byte`
+
+```ocaml
+
+(** MartelliSemiring *)
+MS
+(** Matrix MartelliSemiring *)
+MMS
 
 ```
