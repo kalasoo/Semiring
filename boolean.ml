@@ -103,7 +103,7 @@ module BS = struct
     reduce (B.t_of_sexp String.t_of_sexp (Sexp.of_string s))
 
   let to_string f =
-    B.sexp_of_t String.sexp_of_t f
+    Sexp.to_string (B.sexp_of_t String.sexp_of_t f)
 
   let test s =
     to_string (create s)

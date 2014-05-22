@@ -1,3 +1,5 @@
+open Core.Std
+
 (** Semiring *)
 module type S = sig
   
@@ -13,6 +15,10 @@ module type S = sig
   val plus   : t -> t -> t
 
   val times  : t -> t -> t
+
+  val create : string -> t
+
+  val to_string : t -> string
 
 end
 
@@ -67,7 +73,7 @@ module Make_Matrix_Semiring (Semiring : S) = struct
     !result
 
   let column n j matrix =
-    let col = Array.make n Semiring.zero in
+    let col = Array.create n Semiring.zero in
     for i = 0 to n - 1 do
       col.(i) <- matrix.(i).(j)
     done;
@@ -96,5 +102,14 @@ module Make_Matrix_Semiring (Semiring : S) = struct
       _a := times !_a a
     done;
     !_m
+
+  let print a =
+    let n = size a in
+    for i = 0 to n - 1 do
+      for j = 0 to n - 1 do
+        printf "\t%s;" (Semiring.to_string a.(i).(j))
+      done;
+      print_char '\n'
+    done;
 
 end
